@@ -58,6 +58,28 @@ SnakeNode generate_point()
 	return *snp;
 }
 
+//检测新生成的豆子是否在蛇的身上
+bool test_point(const SnakeHeadAndTail& shnt, const SnakeNode& point)
+{
+	SnakeNode* snp = shnt.snh;
+	while (snp)
+	{
+		if (snp->x == point.x && snp->y == point.y)
+		{
+			return false;
+		}
+		else
+		{
+			snp = snp->next_sn;
+		}
+	}
+	return true;
+}
+
+//这个函数有三个功能：
+//检查蛇头是否撞墙
+//检查蛇头是否咬到自己身体
+//检查蛇头前方是否有豆子
 int test_collision(const SnakeHeadAndTail& shnt, const SnakeNode& point)
 {
 	SnakeNode* head = shnt.snh;
@@ -117,7 +139,7 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 	time_t start_time = time(0);
 	while (1)
 	{
-		//等1秒没有输出就跳出
+		//等一定的时间，这段时间内没有输出就跳出；这个时间可以调整
 		if (_kbhit())
 		{
 			useless = _getch();
@@ -234,7 +256,6 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 		}
 		p->next_sn = NULL;
 		shnt->snt = p;
-		//printf("移动函数内新增蛇尾地址：%p\n", shnt->snt);
 	}
 	return 1;
 }
@@ -243,10 +264,6 @@ void show_snake(const SnakeHeadAndTail& shnt, const SnakeNode& point)
 {
 	system("cls");
 	int i, j;
-	//printf("\n蛇地址为%p\n", &shnt);
-	//printf("蛇头地址为：%p\n", shnt.snh);
-	//printf("蛇头的坐标为：(%d, %d)\n", shnt.snh->x, shnt.snh->y);
-	//printf("这条蛇的方向为：%c\n\n", shnt.direction);
 	for (i = 0; i < 20; i++)
 	{
 		for (j = 0; j < 20; j++)
@@ -295,14 +312,19 @@ int main()
 	while (1)
 	{
 		SnakeNode point = generate_point();
+		//这个while检查新生成的豆子是否在蛇身上，调用上面的test_point()函数
 		while (1)
 		{
-			if (test_collision(shnt, point) == 2);
+			if (!test_point(shnt, point))
+			{
+				point = generate_point();
+			}
 			else
 			{
 				break;
 			}
 		}
+		//这个while用test_collision检查蛇头的情况
 		while (test_collision(shnt, point))
 		{
 			show_snake(shnt, point);
@@ -314,11 +336,17 @@ int main()
 		if (!test_collision(shnt, point))
 		{
 			break;
-			printf("游戏结束\n");
 		}
+		printf("游戏结束\n");
 	}
 	return 0;
 }
+
+
+
+
+
+
 
 
 
