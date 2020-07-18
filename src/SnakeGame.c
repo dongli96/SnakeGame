@@ -52,10 +52,10 @@ SnakeNode generate_point()
 	srand(time(0));
 	int x = rand() % 19;
 	int y = rand() % 19;
-	SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
-	snp->x = x;
-	snp->y = y;
-	return *snp;
+	SnakeNode snp;
+	snp.x = x;
+	snp.y = y;
+	return snp;
 }
 
 /*检测新生成的豆子是否在蛇的身上*/
