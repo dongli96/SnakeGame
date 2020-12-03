@@ -84,7 +84,7 @@ const SnakeNode &generate_point(const Snake& shnt)
 	return *pp;
 }
 
-//这个函数有三个功能
+//这个函数有三个功能：
 //检查蛇头是否撞墙
 //检查蛇头是否咬到自己身体
 //检查蛇头前方是否有豆子
