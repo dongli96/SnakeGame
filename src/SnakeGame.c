@@ -1,8 +1,11 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "time.h"
+#include <iostream>
+#include <ctime>
 #include "conio.h"
 #include "Windows.h"
+using namespace std;
+
+const int board_len = 20;
+const int snake_init_len = 4;
 
 struct SnakeNode
 {
@@ -11,27 +14,27 @@ struct SnakeNode
 	SnakeNode* next_sn;
 };
 
-struct SnakeHeadAndTail
+struct Snake
 {
-	SnakeNode* snh;
-	SnakeNode* snt;
+	SnakeNode *snh;
+	SnakeNode *snt;
 	char direction;
 };
 
-/*初始化一条四个单位长的蛇*/
-SnakeHeadAndTail init_snake()
+//初始化一条长度为4的蛇
+const Snake &init_snake()
 {
-	SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
-	SnakeNode* snh = snp;
+	SnakeNode *snp = new SnakeNode;
+	SnakeNode *snh = snp;
 	int i;
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < snake_init_len; i++)
 	{
-		snp->x = 9;
-		snp->y = 8 + i;
-		SnakeNode* snq = (SnakeNode*)malloc(sizeof(SnakeNode));
-		if (i == 3)
+		snp->x = board_len / 2 - 1;
+		snp->y = board_len / 2 - 2 + i;
+		SnakeNode* snq = new SnakeNode;
+		if (i == snake_init_len - 1)
 		{
-			snp->next_sn = NULL;
+			snp->next_sn = 0;
 		}
 		else
 		{
@@ -39,125 +42,133 @@ SnakeHeadAndTail init_snake()
 			snp = snq;
 		}
 	}
-	SnakeNode* snt = snp;
-	SnakeHeadAndTail shnt;
+	SnakeNode *snt = snp;
+	Snake shnt;
 	shnt.snh = snh;
 	shnt.snt = snt;
 	shnt.direction = 'l';
 	return shnt;
 }
 
-SnakeNode generate_point()
+const SnakeNode &generate_point(const Snake& shnt)
 {
 	srand(time(0));
-	int x = rand() % 19;
-	int y = rand() % 19;
-	SnakeNode snp;
-	snp.x = x;
-	snp.y = y;
-	return snp;
-}
-
-/*检测新生成的豆子是否在蛇的身上*/
-bool test_point(const SnakeHeadAndTail& shnt, const SnakeNode& point)
-{
-	SnakeNode* snp = shnt.snh;
-	while (snp)
+	//检查新生成的豆子是否在蛇的身上
+	SnakeNode *snp = shnt.snh;
+	int x, y;
+	while (1)
 	{
-		if (snp->x == point.x && snp->y == point.y)
+		x = rand() % (board_len - 1);
+		y = rand() % (board_len - 1);
+		while (snp)
 		{
-			return false;
+			if (snp->x == x && snp->y == y)
+			{
+				break;
+				continue;
+			}
+			else
+			{
+				snp = snp->next_sn;
+			}
 		}
-		else
-		{
-			snp = snp->next_sn;
-		}
+		break;
 	}
-	return true;
+	SnakeNode *pp = new SnakeNode;
+	pp->x = x;
+	pp->y = y;
+	return *pp;
 }
 
-/*这个函数有三个功能：*/
-/*检查蛇头是否撞墙*/
-/*检查蛇头是否咬到自己身体*/
-/*检查蛇头前方是否有豆子*/
-int test_collision(const SnakeHeadAndTail& shnt, const SnakeNode& point)
+
+//这个函数有三个功能:
+//检查蛇头是否撞墙
+//检查蛇头是否咬到自己身体
+//检查蛇头前方是否有豆子
+int test_collision(const Snake& shnt, const SnakeNode& point)
 {
-	SnakeNode* head = shnt.snh;
+	SnakeNode *head = shnt.snh;
 	int x = head->x;
 	int y = head->y;
-	if (x < 0 || y < 0 || x>19 || y>19)
+	//检查蛇头坐标
+	if (x < 0 || y < 0 || x > board_len - 1 || y > board_len - 1)
 	{
-		return 0;
+		return -1;
 	}
-	SnakeNode* p = head->next_sn;
+	SnakeNode *p = head->next_sn;
+	//检查蛇是否咬到自己的身体
 	while (p)
 	{
 		int next_x = p->x;
 		int next_y = p->y;
 		if (next_x == x && next_y == y)
 		{
-			return 0;
+			return -2;
 		}
 		p = p->next_sn;
 	}
+	//吃到豆子
 	char direction = shnt.direction;
 	if (direction == 'l' && head->y - 1 == point.y && head->x == point.x)
 	{
-		return 2;
+		return 0;
 	}
-	if (direction == 'r' && head->y + 1 == point.y && head->x == point.x)
+	else if (direction == 'r' && head->y + 1 == point.y && head->x == point.x)
 	{
-		return 2;
+		return 0;
 	}
-	if (direction == 'u' && head->x - 1 == point.x && head->y == point.y)
+	else if (direction == 'u' && head->x - 1 == point.x && head->y == point.y)
 	{
-		return 2;
+		return 0;
 	}
-	if (direction == 'd' && head->x + 1 == point.x && head->y == point.y)
+	else if (direction == 'd' && head->x + 1 == point.x && head->y == point.y)
 	{
-		return 2;
+		return 0;
 	}
+	//一般游动
 	return 1;
 }
 
-int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
+int move_elongate_snake(Snake *shnt, const SnakeNode& point)
 {
-	/*如果头顶上有豆子，新头就是豆子，其他不变*/
-	if (test_collision(*shnt, point) == 2)
+	//test_collision返回值为0的时候表示吃到了豆子，这时豆子作为新头
+	if (!test_collision(*shnt, point))
 	{
-		SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+		SnakeNode *snp = new SnakeNode;
 		snp->x = point.x;
 		snp->y = point.y;
+		//原来的头变成了第二结点
 		snp->next_sn = shnt->snh;
 		shnt->snh = snp;
-		return 2;
+		return 0;
 	}
 	int kb_input = 0;
 	int useless = 0;
 	time_t start_time = time(0);
 	while (1)
 	{
-		/*等一定的时间，这段时间内没有输出就跳出；这个时间可以调整*/
+		//等一定的时间，这段时间内没有输出就跳出；这个时间可以调整
 		if (_kbhit())
 		{
 			useless = _getch();
 			kb_input = _getch();
+			Sleep(200);
 			break;
 		}
 		time_t end_time = time(0);
 		double diff_time = difftime(end_time, start_time);
-		if (diff_time >= 1)
+		if (diff_time >= 0.3)
 		{
 			break;
 		}
 	}
-	/*按上下方向键的变化*/
+	//如果按的是上下方向键
 	if (kb_input == 72 || kb_input == 80)
 	{
 		if (shnt->direction == 'u' || shnt->direction == 'd');
 		else
 		{
-			SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+			SnakeNode *snp = new SnakeNode;
 			snp->y = shnt->snh->y;
 			if (kb_input == 72)
 			{
@@ -171,7 +182,7 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 			}
 			snp->next_sn = shnt->snh;
 			shnt->snh = snp;
-			SnakeNode* p = shnt->snh;
+			SnakeNode *p = shnt->snh;
 			while (p->next_sn->next_sn)
 			{
 				p = p->next_sn;
@@ -180,13 +191,13 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 			p = shnt->snh;
 		}
 	}
-	/*按左右方向键的变化*/
+	//如果按的是左右方向键
 	else if (kb_input == 75 || kb_input == 77)
 	{
 		if (shnt->direction == 'l' || shnt->direction == 'r');
 		else
 		{
-			SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+			SnakeNode *snp = new SnakeNode;
 			snp->x = shnt->snh->x;
 			if (kb_input == 75)
 			{
@@ -200,20 +211,21 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 			}
 			snp->next_sn = shnt->snh;
 			shnt->snh = snp;
-			SnakeNode* p = shnt->snh;
+			SnakeNode *p = shnt->snh;
 			while (p->next_sn->next_sn)
 			{
 				p = p->next_sn;
 			}
-			p->next_sn = NULL;
+			p->next_sn = 0;
 			p = shnt->snh;
 		}
 	}
+	//其他情况，包括不按键或者按的不是方向键的情况
 	else
 	{
 		if (shnt->direction == 'l')
 		{
-			SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+			SnakeNode *snp = new SnakeNode;
 			snp->x = shnt->snh->x;
 			snp->y = shnt->snh->y - 1;
 			snp->next_sn = shnt->snh;
@@ -221,7 +233,7 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 		}
 		else if (shnt->direction == 'r')
 		{
-			SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+			SnakeNode *snp = new SnakeNode;
 			snp->x = shnt->snh->x;
 			snp->y = shnt->snh->y + 1;
 			snp->next_sn = shnt->snh;
@@ -229,7 +241,7 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 		}
 		else if (shnt->direction == 'u')
 		{
-			SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+			SnakeNode *snp = new SnakeNode;
 			snp->y = shnt->snh->y;
 			snp->x = shnt->snh->x - 1;
 			snp->next_sn = shnt->snh;
@@ -237,43 +249,42 @@ int move_elongate_snake(SnakeHeadAndTail* shnt, const SnakeNode& point)
 		}
 		else
 		{
-			SnakeNode* snp = (SnakeNode*)malloc(sizeof(SnakeNode));
+			SnakeNode *snp = new SnakeNode;
 			snp->y = shnt->snh->y;
 			snp->x = shnt->snh->x + 1;
 			snp->next_sn = shnt->snh;
 			shnt->snh = snp;
 		}
-		SnakeNode* p = shnt->snh;
+		SnakeNode *p = shnt->snh;
 		while (p->next_sn->next_sn)
 		{
 			p = p->next_sn;
 		}
-		p->next_sn = NULL;
+		p->next_sn = 0;
 		shnt->snt = p;
 	}
 	return 1;
 }
 
-/*这个函数的功能是打印蛇到控制台*/
-void show_snake(const SnakeHeadAndTail& shnt, const SnakeNode& point)
+void show_snake(const Snake& shnt, const SnakeNode& point)
 {
 	system("cls");
 	int i, j;
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < board_len; i++)
 	{
-		for (j = 0; j < 20; j++)
+		for (j = 0; j < board_len; j++)
 		{
-			SnakeNode* p = shnt.snh;
+			SnakeNode *p = shnt.snh;
 			while (p)
 			{
 				if (p->x == i && p->y == j && p == shnt.snh)
 				{
-					printf("H ");
+					cout << "H ";
 					break;
 				}
 				else if (p->x == i && p->y == j)
 				{
-					printf("S ");
+					cout << "S ";
 					break;
 				}
 				else
@@ -285,63 +296,41 @@ void show_snake(const SnakeHeadAndTail& shnt, const SnakeNode& point)
 			{
 				if (point.x == i && point.y == j)
 				{
-					printf("O ");
+					cout << "O ";
 				}
 				else
 				{
-					printf("- ");
+					cout << "- ";
 				}
 			}
 		}
-		printf("\n");
+		cout << endl;
 	}
 }
 
 int main()
 {
-	SnakeHeadAndTail shnt = init_snake();
-	/*printf("蛇地址为%p\n", &shnt);*/
-	/*printf("蛇头地址：%p\n", shnt.snh);*/
-	/*printf("蛇尾地址：%p\n", shnt.snt);*/
-	/*printf("这条蛇的方向为：%c\n", shnt.direction);*/
+	Snake shnt = init_snake();
 	while (1)
 	{
-		SnakeNode point = generate_point();
-		/*这个while检查新生成的豆子是否在蛇身上，调用上面的test_point()函数*/
-		while (1)
-		{
-			if (!test_point(shnt, point))
-			{
-				point = generate_point();
-			}
-			else
-			{
-				break;
-			}
-		}
-		/*这个while用test_collision检查蛇头的情况*/
-		while (test_collision(shnt, point))
+		SnakeNode point = generate_point(shnt);
+		//
+		while (!test_collision(shnt, point) || test_collision(shnt, point) == 1)
 		{
 			show_snake(shnt, point);
-			if (move_elongate_snake(&shnt, point) == 2)
+			if (!move_elongate_snake(&shnt, point))
 			{
 				break;
 			}
 		}
-		if (!test_collision(shnt, point))
+		if (test_collision(shnt, point) == -1 || test_collision(shnt, point) == -2)
 		{
 			break;
 		}
-		printf("游戏结束\n");
 	}
+	cout << "游戏结束" << endl;
 	return 0;
 }
-
-
-
-
-
-
 
 
 
