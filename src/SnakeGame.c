@@ -4,8 +4,12 @@
 #include "Windows.h"
 using namespace std;
 
-const int board_len = 20;
-const int snake_init_len = 4;
+const int BOARD_LEN = 20;
+const int SNAKE_INIT_LEN = 7;
+const int ELONGATION = 0;
+const int MOVEMENT = 1;
+const int WALL_COLL = -1;
+const int SELF_COLL = -2;
 
 struct SnakeNode
 {
@@ -27,12 +31,12 @@ const Snake &init_snake()
 	SnakeNode *snp = new SnakeNode;
 	SnakeNode *snh = snp;
 	int i;
-	for (i = 0; i < snake_init_len; i++)
+	for (i = 0; i < SNAKE_INIT_LEN; i++)
 	{
-		snp->x = board_len / 2 - 1;
-		snp->y = board_len / 2 - 2 + i;
+		snp->x = BOARD_LEN / 2 - 1;
+		snp->y = BOARD_LEN / 2 - 2 + i;
 		SnakeNode* snq = new SnakeNode;
-		if (i == snake_init_len - 1)
+		if (i == SNAKE_INIT_LEN - 1)
 		{
 			snp->next_sn = 0;
 		}
@@ -58,8 +62,8 @@ const SnakeNode &generate_point(const Snake& shnt)
 	int x, y;
 	while (1)
 	{
-		x = rand() % (board_len - 1);
-		y = rand() % (board_len - 1);
+		x = rand() % (BOARD_LEN - 1);
+		y = rand() % (BOARD_LEN - 1);
 		while (snp)
 		{
 			if (snp->x == x && snp->y == y)
@@ -80,8 +84,7 @@ const SnakeNode &generate_point(const Snake& shnt)
 	return *pp;
 }
 
-
-//这个函数有三个功能:
+//这个函数有三个功能
 //检查蛇头是否撞墙
 //检查蛇头是否咬到自己身体
 //检查蛇头前方是否有豆子
@@ -91,9 +94,9 @@ int test_collision(const Snake& shnt, const SnakeNode& point)
 	int x = head->x;
 	int y = head->y;
 	//检查蛇头坐标
-	if (x < 0 || y < 0 || x > board_len - 1 || y > board_len - 1)
+	if (x < 0 || y < 0 || x > BOARD_LEN - 1 || y > BOARD_LEN - 1)
 	{
-		return -1;
+		return WALL_COLL;
 	}
 	SnakeNode *p = head->next_sn;
 	//检查蛇是否咬到自己的身体
@@ -103,7 +106,7 @@ int test_collision(const Snake& shnt, const SnakeNode& point)
 		int next_y = p->y;
 		if (next_x == x && next_y == y)
 		{
-			return -2;
+			return SELF_COLL;
 		}
 		p = p->next_sn;
 	}
@@ -111,27 +114,27 @@ int test_collision(const Snake& shnt, const SnakeNode& point)
 	char direction = shnt.direction;
 	if (direction == 'l' && head->y - 1 == point.y && head->x == point.x)
 	{
-		return 0;
+		return ELONGATION;
 	}
 	else if (direction == 'r' && head->y + 1 == point.y && head->x == point.x)
 	{
-		return 0;
+		return ELONGATION;
 	}
 	else if (direction == 'u' && head->x - 1 == point.x && head->y == point.y)
 	{
-		return 0;
+		return ELONGATION;
 	}
 	else if (direction == 'd' && head->x + 1 == point.x && head->y == point.y)
 	{
-		return 0;
+		return ELONGATION;
 	}
 	//一般游动
-	return 1;
+	return MOVEMENT;
 }
 
 int move_elongate_snake(Snake *shnt, const SnakeNode& point)
 {
-	//test_collision返回值为0的时候表示吃到了豆子，这时豆子作为新头
+	//est_collision返回值为0的时候表示吃到了豆子，这时豆子作为新头
 	if (!test_collision(*shnt, point))
 	{
 		SnakeNode *snp = new SnakeNode;
@@ -140,7 +143,7 @@ int move_elongate_snake(Snake *shnt, const SnakeNode& point)
 		//原来的头变成了第二结点
 		snp->next_sn = shnt->snh;
 		shnt->snh = snp;
-		return 0;
+		return ELONGATION;
 	}
 	int kb_input = 0;
 	int useless = 0;
@@ -187,7 +190,7 @@ int move_elongate_snake(Snake *shnt, const SnakeNode& point)
 			{
 				p = p->next_sn;
 			}
-			p->next_sn = NULL;
+			p->next_sn = 0;
 			p = shnt->snh;
 		}
 	}
@@ -263,16 +266,16 @@ int move_elongate_snake(Snake *shnt, const SnakeNode& point)
 		p->next_sn = 0;
 		shnt->snt = p;
 	}
-	return 1;
+	return MOVEMENT;
 }
 
 void show_snake(const Snake& shnt, const SnakeNode& point)
 {
 	system("cls");
 	int i, j;
-	for (i = 0; i < board_len; i++)
+	for (i = 0; i < BOARD_LEN; i++)
 	{
-		for (j = 0; j < board_len; j++)
+		for (j = 0; j < BOARD_LEN; j++)
 		{
 			SnakeNode *p = shnt.snh;
 			while (p)
@@ -315,7 +318,7 @@ int main()
 	{
 		SnakeNode point = generate_point(shnt);
 		//
-		while (!test_collision(shnt, point) || test_collision(shnt, point) == 1)
+		while (test_collision(shnt, point) == ELONGATION || test_collision(shnt, point) == MOVEMENT)
 		{
 			show_snake(shnt, point);
 			if (!move_elongate_snake(&shnt, point))
@@ -323,7 +326,7 @@ int main()
 				break;
 			}
 		}
-		if (test_collision(shnt, point) == -1 || test_collision(shnt, point) == -2)
+		if (test_collision(shnt, point) == WALL_COLL || test_collision(shnt, point) == SELF_COLL)
 		{
 			break;
 		}
@@ -331,8 +334,3 @@ int main()
 	cout << "游戏结束" << endl;
 	return 0;
 }
-
-
-
-
-
