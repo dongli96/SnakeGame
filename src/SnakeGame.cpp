@@ -34,7 +34,7 @@ const Snake &init_snake()
 	for (i = 0; i < SNAKE_INIT_LEN; i++)
 	{
 		snp->x = BOARD_LEN / 2 - 1;
-		snp->y = BOARD_LEN / 2 - 2 + i;
+		snp->y = BOARD_LEN / 2 - 2 + i; //蛇头初始化在界面中点处
 		SnakeNode* snq = new SnakeNode;
 		if (i == SNAKE_INIT_LEN - 1)
 		{
@@ -50,7 +50,7 @@ const Snake &init_snake()
 	Snake shnt;
 	shnt.snh = snh;
 	shnt.snt = snt;
-	shnt.direction = 'l';
+	shnt.direction = 'l'; //初始移动方向默认为左
 	return shnt;
 }
 
